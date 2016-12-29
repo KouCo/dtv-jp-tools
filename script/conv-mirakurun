@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+
+import sys
+import re
+import argparse
+import collections
+
+def parse_dvbv5_file( lines):
+	r_ch	= re.compile( "^\[(.+)\]")
+	r_item	= re.compile( "^\s*(\S+)\s*=\s*(\S+)")
+
+	ch_lines = []
+	ch_line = None
+	for i in range( 0, len( lines)):
+		m = r_ch.match( lines[ i])
+		if m == None:
+			continue
+		if ch_line != None:
+			ch_line[ "end"] = i
+		ch_line = {
+			"name"	: m.group( 1),
+			"begin"	: i,
+			"end"	: i,
+		}
+		ch_lines.append( ch_line)
+
+	if ch_line != None:
+		ch_line[ "end"] = i
+	else:
+		raise Exception( "Not found channel")
+
+	channels = []
+	for ch_line in ch_lines:
+		items = {}
+		for i in range( ch_line[ "begin"], ch_line[ "end"]):
+			m = r_item.match( lines[ i])
+			if m == None:
+				continue
+			items[ m.group( 1)] = m.group( 2)
+		channels.append( (ch_line[ "name"], items))
+
+	return channels
+
+def convert( args):
+	r_ch = re.compile( "^\[(.+)\]")
+	r_sid = re.compile( "^\s*SERVICE_ID\s*=\s*(\d+)")
+
+	lines = args.dvbv5_file.readlines()
+	dvb_chs = parse_dvbv5_file( lines)
+	channels = collections.OrderedDict()
+	for (ch, items) in dvb_chs:
+		# Remove 1Seg
+		key = "ISDBT_PARTIAL_RECEPTION"
+		if key in items and items[ key] == "1":
+			continue
+		# Remove none VIDEO_PID and AUDIO_PID
+		if "VIDEO_PID" not in items or "AUDIO_PID" not in items:
+			continue
+
+		if args.type == "GR":
+			id = items[ "FREQUENCY"]
+		elif args.type == "BS":
+			id = items[ "STREAM_ID"]
+		else:
+			id = ch
+
+		if id in channels:
+			if (channels[ id][ "items"][ "VIDEO_PID"] == items[ "VIDEO_PID"] and \
+			    channels[ id][ "items"][ "AUDIO_PID"] == items[ "AUDIO_PID"]) or \
+			   channels[ id][ "items"][ "SERVICE_ID"] < items[ "SERVICE_ID"]:
+				continue
+
+		channels[ id] = {
+			"name"		: ch,
+			"items"		: items,
+			"mirakurun" : collections.OrderedDict( [
+				("type"			, args.type		),
+				("channel"		, "'" + ch + "'"),
+				("serviceId"	, None			),
+				("isDisabled"	, None			),
+			]),
+		}
+		if args.sid:
+			channels[ id][ "mirakurun"][ "serviceId"] = items[ "SERVICE_ID"]
+		if args.disable:
+			channels[ ch][ "mirakurun"][ "isDisabled"] = "true"
+
+	for ch in channels.values():
+		m_ch = ch[ "mirakurun"]
+		args.out.write( "- name: " + ch[ "name"]+ "\n")
+		for item, val in m_ch.items():
+			if val != None:
+				args.out.write( "  %s: %s\n" %(item, val))
+		args.out.write( "\n")
+
+
+def ParseOption():
+	p = argparse.ArgumentParser( 
+		description="Convert channel format from DVBv5 to Mirakurun."
+	)
+
+	p.add_argument( "dvbv5_file", type=argparse.FileType( "r"), help="DVBv5 channel file")
+	p.add_argument( "-t", "--type", choices=[ "GR", "BS", "CS"], default="GR", help="(default: %(default)s)")
+	p.add_argument( "-d", "--disable", action="store_true", help="Disable all channels")
+	p.add_argument( "-s", "--sid"    , action="store_true", help="Enable serivce id")
+	p.add_argument( "-o", "--out"    , type=argparse.FileType( "w"), default=sys.stdout, 
+					help="Output file(default: stdout)"
+	)
+
+	return p.parse_args()
+
+if __name__ == "__main__":
+	try:
+		args = ParseOption()
+		convert( args)
+
+	except KeyboardInterrupt as e:
+		sys.exit( 0)
+
+	except Exception as e:
+#		sys.stderr.write( str( e) + "\n")
+#		sys.exit( -1)
+		raise e
