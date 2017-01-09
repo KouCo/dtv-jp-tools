@@ -25,7 +25,7 @@ def parse_dvbv5_file( lines):
 		ch_lines.append( ch_line)
 
 	if ch_line != None:
-		ch_line[ "end"] = i
+		ch_line[ "end"] = i + 1
 	else:
 		raise Exception( "Not found channel")
 
@@ -42,9 +42,6 @@ def parse_dvbv5_file( lines):
 	return channels
 
 def convert( args):
-	r_ch = re.compile( "^\[(.+)\]")
-	r_sid = re.compile( "^\s*SERVICE_ID\s*=\s*(\d+)")
-
 	lines = args.dvbv5_file.readlines()
 	dvb_chs = parse_dvbv5_file( lines)
 	channels = collections.OrderedDict()
@@ -100,10 +97,11 @@ def ParseOption():
 	)
 
 	p.add_argument( "dvbv5_file", type=argparse.FileType( "r"), help="DVBv5 channel file")
-	p.add_argument( "-t", "--type", choices=[ "GR", "BS", "CS"], default="GR", help="(default: %(default)s)")
+	p.add_argument( "-t", "--type", choices=[ "GR", "BS", "CS", "SKY"], default="GR",
+					help="(default: %(default)s)")
 	p.add_argument( "-d", "--disable", action="store_true", help="Disable all channels")
 	p.add_argument( "-s", "--sid"    , action="store_true", help="Enable serivce id")
-	p.add_argument( "-o", "--out"    , type=argparse.FileType( "w"), default=sys.stdout, 
+	p.add_argument( "-o", "--out"    , type=argparse.FileType( "w"), default=sys.stdout,
 					help="Output file(default: stdout)"
 	)
 
