@@ -1,13 +1,32 @@
 diff --git a/drivers/media/dvb-frontends/si2168.c b/drivers/media/dvb-frontends/si2168.c
-index 4b6e0bc..432a8b5 100644
+index 37d14e0c0..7f29fd85d 100644
 --- a/drivers/media/dvb-frontends/si2168.c
 +++ b/drivers/media/dvb-frontends/si2168.c
-@@ -256,7 +256,7 @@ static int si2168_set_frontend(struct dvb_frontend *fe)
- 		if (c->symbol_rate < 6000000) {
- 			delivery_system = 0x10;
- 			c->delivery_system = SYS_DVBC_ANNEX_B;
--			c->bandwidth_hz = 6000000;
-+//			c->bandwidth_hz = 6000000;
- 		}
+@@ -336,10 +336,10 @@ static int si2168_set_frontend(struct dvb_frontend *fe)
+ 	switch (c->delivery_system) {
+ 	case SYS_DVBC_ANNEX_B:
+ 		delivery_system = 0x10;
+-		if( c->modulation==QAM_256)
+-			 c->symbol_rate=5361000;
+-		if( c->modulation==QAM_64)
+-			 c->symbol_rate=5057000;	
++		//if( c->modulation==QAM_256)
++		//	 c->symbol_rate=5361000;
++		//if( c->modulation==QAM_64)
++		//	 c->symbol_rate=5057000;
  		break;
- 	case SYS_DVBT2:
+ 	case SYS_DVBT:
+ 		delivery_system = 0x20;
+@@ -399,9 +399,9 @@ static int si2168_set_frontend(struct dvb_frontend *fe)
+ 		cmd_init(&cmd, "\x89\x21\x06\x11\x89\xf0", 6, 3);
+ 	else if (c->delivery_system == SYS_DVBT2)
+ 		cmd_init(&cmd, "\x89\x21\x06\x11\x89\x20", 6, 3);
+-	ret = si2168_cmd_execute(client, &cmd);
+-	if (ret)
+-		goto err;
++//	ret = si2168_cmd_execute(client, &cmd);
++//	if (ret)
++//		goto err;
+ 
+ 	if (c->delivery_system == SYS_DVBT2) {
+ 		/* select PLP */

@@ -117,32 +117,32 @@ def convert( args):
 		if id in channels:
 			if (channels[ id][ "items"][ "VIDEO_PID"] == items[ "VIDEO_PID"] and \
 			    channels[ id][ "items"][ "AUDIO_PID"] == items[ "AUDIO_PID"]) or \
-			   channels[ id][ "items"][ "SERVICE_ID"] < items[ "SERVICE_ID"]:
+			    channels[ id][ "items"][ "SERVICE_ID"] < items[ "SERVICE_ID"]:
 				continue
 
 		channels[ id] = {
 			"name"		: ch,
 			"items"		: items,
-			"mirakurun" : collections.OrderedDict( [
-				("type"			, args.type		),
-				("channel"		, "'" + ch + "'"),
-				("serviceId"	, None			),
-				("isDisabled"	, None			),
+			"mirakc" : collections.OrderedDict( [
+				("type"		, args.type	),
+				("channel"	, "'" + ch + "'"),
+				("services"	, None		),
+				("disabled"	, None		),
 			]),
 		}
 		if args.sid:
-			channels[ id][ "mirakurun"][ "serviceId"] = items[ "SERVICE_ID"]
+			channels[ id][ "mirakc"][ "services"] = [ int( items[ "SERVICE_ID"]) ]
 		if args.disable:
-			channels[ ch][ "mirakurun"][ "isDisabled"] = "true"
+			channels[ ch][ "mirakc"][ "disabled"] = "true"
 
 	for ch in channels.values():
-		m_ch = ch[ "mirakurun"]
-		args.out.write( "# %s\n" % ch[ "items"][ "CHANNEL_ORIG"])
-		#args.out.write( "- name: %s\n" % ch[ "name"])
-		args.out.write( "- name: %s\n" % ch[ "items"][ "CHANNEL_ORIG"])
+		m_ch = ch[ "mirakc"]
+		args.out.write( "  # %s\n" % ch[ "items"][ "CHANNEL_ORIG"])
+		#args.out.write( "  - name: %s\n" % ch[ "name"])
+		args.out.write( "  - name: %s\n" % ch[ "items"][ "CHANNEL_ORIG"])
 		for item, val in m_ch.items():
 			if val != None:
-				args.out.write( "  %s: %s\n" %(item, val))
+				args.out.write( "    %s: %s\n" %(item, val))
 		args.out.write( "\n")
 
 	output_dvbv5_channels( dvb_chs, args)
@@ -150,7 +150,7 @@ def convert( args):
 
 def ParseOption():
 	p = argparse.ArgumentParser( 
-		description="Convert channel format from DVBv5 to Mirakurun."
+		description="Convert channel format from DVBv5 to mirakc."
 	)
 
 	p.add_argument( "in_file", type=argparse.FileType( "r"), help="Input DVBv5 channel file")
@@ -161,7 +161,7 @@ def ParseOption():
 	p.add_argument( "-d", "--disable", action="store_true", help="Disable all channels")
 	p.add_argument( "-s", "--sid"    , action="store_true", help="Enable serivce id")
 	p.add_argument( "-o", "--out"    , type=argparse.FileType( "w"), default=sys.stdout,
-					help="Output Mirakurun channel file(default: stdout)"
+					help="Output mirakc channel file(default: stdout)"
 	)
 
 	return p.parse_args()
